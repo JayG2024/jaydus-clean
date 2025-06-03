@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jaydus Platform - AI Tools Dashboard</title>
+    <meta name="description" content="Access powerful AI tools for image generation, chat models, and voiceover services in one platform." />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.stripe.com 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://*.clerk.accounts.dev https://*.jaydus.ai https://clerk.jaydus.ai https://challenges.cloudflare.com https://*.cloudflare.com; worker-src 'self' blob:; connect-src 'self' https://*.clerk.accounts.dev https://*.jaydus.ai https://clerk.jaydus.ai https://api.openai.com https://api.anthropic.com https://api.stripe.com https://*.netlify.app https://challenges.cloudflare.com https://*.cloudflare.com; img-src 'self' data: https://*.clerk.accounts.dev https://*.jaydus.ai https://clerk.jaydus.ai https://img.clerk.com https://ui-avatars.com https://*.pexels.com https://*.stripe.com https://images.unsplash.com https://oaidalleapiprodscus.blob.core.windows.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.stripe.com https://*.clerk.accounts.dev https://*.jaydus.ai https://clerk.jaydus.ai https://challenges.cloudflare.com https://*.cloudflare.com; media-src 'self' data:;" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Node.js polyfills for browser environment -->
+    <script>
+      // Polyfill for util.promisify
+      window.util = window.util || {};
+      window.util.promisify = function(fn) {
+        return function(...args) {
+          return new Promise((resolve, reject) => {
+            fn(...args, (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            });
+          });
+        };
+      };
+    </script>
+  </head>
+  <body class="antialiased bg-gray-50 dark:bg-gray-950">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

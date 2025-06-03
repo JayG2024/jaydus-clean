@@ -1,0 +1,21 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Podgorica",
+			"country": {
+				"code": "ME",
+				"name": "Montenegro"
+			},
+			"subdivision": {
+				"code": "16",
+				"name": "Podgorica"
+			},
+			"timezone": "Europe/Podgorica",
+			"latitude": 42.4411,
+			"longitude": 19.2632
+		},
+		"timestamp": 1748097337665
+	},
+	"promptVSCodeSettings": true,
+	"siteId": "3c306343-6f05-4c6a-bc7e-afab1a7e3c25"
+}
