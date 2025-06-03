@@ -1,6 +1,18 @@
-# Jaydus SaaS AI Dashboard
+# Jaydus SaaS AI Dashboard (Development Version)
 
 Jaydus Platform is a comprehensive AI toolset that includes multiple AI models for text, image, and video generation, along with chat capabilities, voiceover services, and custom AI assistants.
+
+## Development Notes
+
+### Authentication Bypass
+This repository contains a modified version of the original Jaydus Platform with authentication bypass enabled. All authentication routes (login, signup, etc.) have been configured to redirect directly to the dashboard. This allows for easier development and testing without the need to authenticate.
+
+Key modifications:
+- The `skipAuthInDevelopment` function is set to always return `true`
+- Login, signup, and forgot password routes all redirect to the dashboard
+- Authentication protection is completely bypassed for all protected routes
+
+**Note:** This is intended for development purposes only. Do not use this configuration in production.
 
 ## Technology Stack
 
