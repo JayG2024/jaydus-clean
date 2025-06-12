@@ -1,11 +1,13 @@
-# Jaydus Platform - Next.js with Supabase
+# Jaydus Platform - Next.js with Vercel Database
 
 A comprehensive AI toolset that includes multiple AI models for text, image, and video generation, along with chat capabilities, voiceover services, and custom AI assistants.
 
 ## Technology Stack
 
 - Next.js 14 with App Router
-- Supabase for authentication and database
+- NextAuth.js for authentication
+- Vercel Postgres for database
+- Drizzle ORM for database operations
 - OpenRouter for AI model access
 - Vercel for hosting
 - Tailwind CSS for styling
@@ -25,9 +27,9 @@ A comprehensive AI toolset that includes multiple AI models for text, image, and
 ### Prerequisites
 
 - Node.js 18+
-- Supabase account
+- Vercel account
 - OpenRouter API key
-- Vercel account (for deployment)
+- OAuth provider credentials (Google, GitHub)
 
 ### Installation
 
@@ -47,18 +49,30 @@ A comprehensive AI toolset that includes multiple AI models for text, image, and
 For local development:
 1. Copy `.env.example` to `.env.local`
 2. Fill in the values for:
-   - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anon key
+   - `POSTGRES_URL` - Your Vercel Postgres URL
+   - `NEXTAUTH_URL` - Your app URL (http://localhost:3000 for development)
+   - `NEXTAUTH_SECRET` - A random secret for NextAuth
+   - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - Google OAuth credentials
+   - `GITHUB_ID` & `GITHUB_SECRET` - GitHub OAuth credentials
    - `OPENROUTER_API_KEY` - Your OpenRouter API key
-   - `NEXT_PUBLIC_OPENROUTER_API_KEY` - Same as above (for client-side)
-   - `NEXT_PUBLIC_APP_URL` - Your app URL (http://localhost:3000 for development)
+   - `NEXT_PUBLIC_APP_URL` - Your app URL
 
-### Supabase Setup
+### Database Setup
 
-1. Create a new Supabase project
-2. Run the SQL migrations in the `supabase/migrations` folder
-3. Set up authentication providers (Email, GitHub, etc.)
-4. Configure storage buckets if needed
+1. Create a Vercel Postgres database
+2. Run the database migrations:
+   ```bash
+   npx drizzle-kit push:pg
+   ```
+
+### Authentication Setup
+
+1. Configure OAuth providers:
+   - Google: https://console.cloud.google.com/
+   - GitHub: https://github.com/settings/developers
+
+2. Set up email provider (optional):
+   - Configure SMTP settings for magic link authentication
 
 ## Deployment
 
@@ -66,7 +80,7 @@ For local development:
 
 1. Push your code to GitHub
 2. Import the repository in Vercel
-3. Set the environment variables
+3. Set the environment variables in Vercel dashboard
 4. Deploy
 
 ## Project Structure
@@ -83,11 +97,12 @@ For local development:
 │   ├── ui/               # UI components
 │   └── ...
 ├── lib/                  # Utility libraries
-│   ├── supabase.ts       # Supabase client
+│   ├── db.ts             # Database schema and utilities
+│   ├── auth.ts           # NextAuth configuration
 │   ├── openrouter.ts     # OpenRouter client
 │   └── ...
 ├── public/               # Static assets
-├── supabase/             # Supabase migrations
+├── drizzle/              # Database migrations
 └── ...
 ```
 
