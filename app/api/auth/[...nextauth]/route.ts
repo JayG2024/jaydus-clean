@@ -1,6 +1,15 @@
 import NextAuth from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 
-const handler = NextAuth(authOptions);
+async function GET(req: NextRequest) {
+  const handler = NextAuth(authOptions);
+  return handler(req);
+}
 
-export { handler as GET, handler as POST };
+async function POST(req: NextRequest) {
+  const handler = NextAuth(authOptions);
+  return handler(req);
+}
+
+export { GET, POST };
