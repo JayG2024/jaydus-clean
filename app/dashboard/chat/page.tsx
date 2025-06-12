@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import { openRouter, streamChatCompletion } from '@/lib/openrouter';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MessageSquare, Send, Bot, User as UserIcon, Sparkles } from 'lucide-react';
@@ -27,7 +26,7 @@ interface Chat {
 }
 
 export default function ChatPage() {
-  const [user, setUser] = useState<any>(null);
+  const { data: session } = useSession();
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,34 +35,29 @@ export default function ChatPage() {
   const [selectedModel, setSelectedModel] = useState('openai/gpt-3.5-turbo');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load user data and chats
+  // Load user chats
   useEffect(() => {
-    async function loadUserData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      if (user) {
-        // Load user's chats
-        const { data: chatsData, error } = await supabase
-          .from('chats')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
-          
-        if (error) {
+    async function loadUserChats() {
+      if (session?.user) {
+        try {
+          const response = await fetch('/api/chats');
+          if (response.ok) {
+            const chatsData = await response.json();
+            setChats(chatsData);
+            if (chatsData.length > 0) {
+              setCurrentChatId(chatsData[0].id);
+              setMessages(chatsData[0].messages || []);
+            }
+          }
+        } catch (error) {
           console.error('Error loading chats:', error);
           toast.error('Failed to load chats');
-        } else if (chatsData && chatsData.length > 0) {
-          setChats(chatsData);
-          // Load the most recent chat
-          setCurrentChatId(chatsData[0].id);
-          setMessages(chatsData[0].messages || []);
         }
       }
     }
     
-    loadUserData();
-  }, []);
+    loadUserChats();
+  }, [session]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -71,33 +65,27 @@ export default function ChatPage() {
   }, [messages]);
 
   const createNewChat = async () => {
-    if (!user) return;
+    if (!session?.user) return;
     
     try {
-      const newChat = {
-        id: uuidv4(),
-        user_id: user.id,
-        title: 'New Chat',
-        messages: [],
-        model: selectedModel,
-        created_at: new Date(),
-        updated_at: new Date()
-      };
+      const response = await fetch('/api/chats', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: 'New Chat',
+          model: selectedModel,
+        }),
+      });
       
-      const { data, error } = await supabase
-        .from('chats')
-        .insert([newChat])
-        .select()
-        .single();
-        
-      if (error) {
-        throw error;
+      if (response.ok) {
+        const newChat = await response.json();
+        setChats([newChat, ...chats]);
+        setCurrentChatId(newChat.id);
+        setMessages([]);
+        toast.success('New chat created');
       }
-      
-      setChats([data, ...chats]);
-      setCurrentChatId(data.id);
-      setMessages([]);
-      toast.success('New chat created');
     } catch (error) {
       console.error('Error creating chat:', error);
       toast.error('Failed to create new chat');
@@ -106,7 +94,7 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isGenerating) return;
-    if (!user) {
+    if (!session?.user) {
       toast.error('Please sign in to send messages');
       return;
     }
@@ -125,110 +113,40 @@ export default function ChatPage() {
     setIsGenerating(true);
 
     try {
-      // Create or update chat in Supabase
-      let chatId = currentChatId;
-      
-      if (!chatId) {
-        // Create a new chat
-        const { data, error } = await supabase
-          .from('chats')
-          .insert([{
-            user_id: user.id,
-            title: inputMessage.slice(0, 30),
-            messages: [userMessage],
-            model: selectedModel,
-            created_at: new Date(),
-            updated_at: new Date()
-          }])
-          .select()
-          .single();
-          
-        if (error) {
-          throw error;
-        }
-        
-        chatId = data.id;
-        setCurrentChatId(chatId);
-        setChats([data, ...chats]);
-      }
-
-      // Create assistant message placeholder
-      const assistantMessage: Message = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: '',
-        timestamp: new Date()
-      };
-      
-      // Add empty assistant message to state
-      setMessages(prev => [...prev, assistantMessage]);
-
       // Prepare messages for API
-      const apiMessages = messages.map(m => ({
+      const apiMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content
       }));
-      
-      // Add user message
-      apiMessages.push({
-        role: 'user',
-        content: inputMessage
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: apiMessages,
+          model: selectedModel,
+          chatId: currentChatId,
+        }),
       });
 
-      // Stream the response
-      const stream = await openRouter.chat.completions.create({
-        model: selectedModel,
-        messages: apiMessages,
-        stream: true,
-      });
-
-      let fullResponse = '';
-      
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || '';
-        if (content) {
-          fullResponse += content;
-          
-          // Update the assistant message with the new content
-          setMessages(prev => 
-            prev.map(m => 
-              m.id === assistantMessage.id 
-                ? { ...m, content: fullResponse }
-                : m
-            )
-          );
-        }
-      }
-
-      // Update chat in database with all messages
-      const updatedMessages = [...messages, userMessage, { ...assistantMessage, content: fullResponse }];
-      
-      const { error } = await supabase
-        .from('chats')
-        .update({
-          messages: updatedMessages,
-          updated_at: new Date()
-        })
-        .eq('id', chatId);
+      if (response.ok) {
+        const assistantMessage = await response.json();
         
-      if (error) {
-        throw error;
-      }
-      
-      // Update chats list with new title if this was a new chat
-      if (chats.findIndex(c => c.id === chatId) === -1) {
-        setChats(prev => prev.map(chat => 
-          chat.id === chatId 
-            ? { ...chat, messages: updatedMessages, title: inputMessage.slice(0, 30) }
-            : chat
-        ));
+        // Add assistant response to messages
+        setMessages(prev => [...prev, {
+          id: uuidv4(),
+          role: 'assistant',
+          content: assistantMessage.content,
+          timestamp: new Date()
+        }]);
+      } else {
+        throw new Error('Failed to get response');
       }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
-      
-      // Remove the assistant message if there was an error
-      setMessages(prev => prev.filter(m => m.role !== 'assistant' || m.content !== ''));
     } finally {
       setIsGenerating(false);
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { 
   Menu, 
   X, 
@@ -17,7 +18,6 @@ import {
   Moon 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 
@@ -42,7 +42,7 @@ export default function Navbar({ user }: { user: any }) {
   
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut({ callbackUrl: '/' });
       setShowUserMenu(false);
       toast.success('Logged out successfully');
     } catch (error) {
@@ -205,20 +205,20 @@ export default function Navbar({ user }: { user: any }) {
                   className="flex items-center gap-2 rounded-full p-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 overflow-hidden">
-                    {user.user_metadata?.avatar_url ? (
+                    {user.image ? (
                       <img 
-                        src={user.user_metadata.avatar_url} 
-                        alt={user.user_metadata?.full_name || 'User'} 
+                        src={user.image} 
+                        alt={user.name || 'User'} 
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <span className="text-sm font-medium">
-                        {user.user_metadata?.full_name?.[0] || user.email?.[0] || 'U'}
+                        {user.name?.[0] || user.email?.[0] || 'U'}
                       </span>
                     )}
                   </div>
                   <span className="hidden md:block text-gray-700 dark:text-gray-200">
-                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                    {user.name || user.email?.split('@')[0]}
                   </span>
                   <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
@@ -227,7 +227,7 @@ export default function Navbar({ user }: { user: any }) {
                   <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-lg bg-white dark:bg-gray-900 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                     <div className="border-b border-gray-200 dark:border-gray-800 pb-2 pt-1 px-4 mb-1">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                        {user.name || user.email?.split('@')[0]}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {user.email}

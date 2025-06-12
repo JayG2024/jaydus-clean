@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { useSession } from 'next-auth/react';
 import Sidebar from '@/components/dashboard/sidebar';
 import Navbar from '@/components/dashboard/navbar';
 import { toast } from 'sonner';
@@ -14,48 +14,21 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<any>(null);
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function getUser() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          router.push('/login');
-          return;
-        }
-        
-        setUser(user);
-      } catch (error) {
-        console.error('Error getting user:', error);
-        toast.error('Authentication error. Please log in again.');
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
+    if (status === 'loading') return; // Still loading
+
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
     }
 
-    getUser();
-    
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          router.push('/login');
-        } else if (event === 'SIGNED_IN' && session) {
-          setUser(session.user);
-        }
-      }
-    );
+    setLoading(false);
+  }, [status, router]);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router]);
-
-  if (loading) {
+  if (loading || status === 'loading') {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
@@ -66,9 +39,13 @@ export default function DashboardLayout({
     );
   }
 
+  if (!session) {
+    return null; // Will redirect to login
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-      <Navbar user={user} />
+      <Navbar user={session.user} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 p-6 overflow-auto">

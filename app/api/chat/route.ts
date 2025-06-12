@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import { openRouter } from '@/lib/openrouter';
+import { getUserByEmail, updateChat, createChat } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
-    // Get the current user
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
+    // Get the current user session
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Get user from database
+    const user = await getUserByEmail(session.user.email);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
 
@@ -30,36 +38,23 @@ export async function POST(request: Request) {
 
     // If a chatId was provided, update the chat in the database
     if (chatId) {
-      // Get the current chat
-      const { data: chat, error: chatError } = await supabase
-        .from('chats')
-        .select('*')
-        .eq('id', chatId)
-        .eq('user_id', user.id)
-        .single();
+      // Update the chat with the new messages
+      const updatedMessages = [
+        ...messages,
+        assistantMessage // Add the assistant response
+      ];
 
-      if (chatError) {
-        console.error('Error fetching chat:', chatError);
-      } else if (chat) {
-        // Update the chat with the new messages
-        const updatedMessages = [
-          ...chat.messages,
-          messages[messages.length - 1], // Add the user message
-          assistantMessage // Add the assistant response
-        ];
-
-        const { error: updateError } = await supabase
-          .from('chats')
-          .update({
-            messages: updatedMessages,
-            updated_at: new Date()
-          })
-          .eq('id', chatId);
-
-        if (updateError) {
-          console.error('Error updating chat:', updateError);
-        }
-      }
+      await updateChat(chatId, {
+        messages: updatedMessages,
+      });
+    } else {
+      // Create a new chat
+      await createChat({
+        userId: user.id,
+        title: messages[0]?.content?.slice(0, 50) || 'New Chat',
+        messages: [...messages, assistantMessage],
+        model,
+      });
     }
 
     // Return the assistant's response

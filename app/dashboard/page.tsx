@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, MessageSquare, Image, Mic, Bot, ArrowUpRight, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     creditsUsed: 0,
@@ -20,23 +20,16 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadUserData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-        
-        // Fetch user stats from Supabase
-        if (user) {
-          const { data: usageData, error } = await supabase
-            .from('usage')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-            
-          if (usageData) {
+        if (session?.user) {
+          // Fetch user stats from API
+          const response = await fetch('/api/user/stats');
+          if (response.ok) {
+            const data = await response.json();
             setStats({
-              creditsUsed: usageData.ai_credits_used || 0,
-              imagesGenerated: usageData.images_generated || 0,
-              chatMessages: usageData.chat_messages || 0,
-              voiceoverMinutes: usageData.voice_minutes || 0
+              creditsUsed: data.ai_credits_used || 0,
+              imagesGenerated: data.images_generated || 0,
+              chatMessages: data.chat_messages || 0,
+              voiceoverMinutes: data.voice_minutes || 0
             });
           }
         }
@@ -48,7 +41,7 @@ export default function DashboardPage() {
     }
     
     loadUserData();
-  }, []);
+  }, [session]);
 
   return (
     <div className="space-y-8">
@@ -57,7 +50,7 @@ export default function DashboardPage() {
         <div className="absolute inset-0 bg-grid-white/[0.1] bg-[length:16px_16px]"></div>
         <div className="relative z-10">
           <h1 className="text-2xl font-bold mb-1">
-            Welcome back, {user?.user_metadata?.full_name || 'User'}
+            Welcome back, {session?.user?.name || 'User'}
           </h1>
           <p className="text-white/80">
             Here's what's happening with your AI tools today.
