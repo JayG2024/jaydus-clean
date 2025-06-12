@@ -1,8 +1,20 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'class',
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+  ],
   theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
     extend: {
       colors: {
         // Primary colors - mapped to CSS variables for theme support
@@ -89,54 +101,27 @@ export default {
           900: 'rgb(var(--color-error-900) / <alpha-value>)',
           950: 'rgb(var(--color-error-950) / <alpha-value>)',
         },
-        // Semantic mappings of actual colors for easy reference
-        blue: {
-          600: '#2563eb'
-        },
-        purple: {
-          600: '#7c3aed'
-        },
-        green: {
-          600: '#16a34a'
-        },
-        orange: {
-          600: '#ea580c'
-        },
-        red: {
-          600: '#dc2626'
-        },
-        teal: {
-          600: '#0d9488'
-        },
-        pink: {
-          600: '#db2777'
-        },
-      },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        'lg': '0.5rem',
-        'xl': '0.75rem',
-        '2xl': '1rem',
+        lg: "0.5rem",
+        xl: "0.75rem",
+        "2xl": "1rem",
       },
       keyframes: {
-        slideDownAndFade: {
-          from: { opacity: 0, transform: 'translateY(-2px)' },
-          to: { opacity: 1, transform: 'translateY(0)' },
+        "accordion-down": {
+          from: { height: 0 },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
-        slideUpAndFade: {
-          from: { opacity: 0, transform: 'translateY(2px)' },
-          to: { opacity: 1, transform: 'translateY(0)' },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: 0 },
         },
       },
       animation: {
-        slideDownAndFade: 'slideDownAndFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        slideUpAndFade: 'slideUpAndFade 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [
-    require('tailwindcss-animate'),
-  ],
-};
+  plugins: [require("tailwindcss-animate")],
+}
